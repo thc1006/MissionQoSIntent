@@ -1,6 +1,4 @@
-# MissionQoSIntent
-
-> 開發研究計畫書（SDD + ADR 套件）
+# MissionQoSIntent — 開發研究計畫書（SDD + ADR 套件）
 
 > **作者**：Hsiu-Chi Tsai（NYCU）  ·  **撰寫日**：2026-06-25  ·  **版本**：v0.1.0
 > **格式遵循**：arc42（架構文件）＋ MADR 4.0.0（架構決策記錄）＋ C4 model（視覺）＋ Keep a Changelog
