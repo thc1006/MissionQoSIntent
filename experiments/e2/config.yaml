@@ -1,0 +1,18 @@
+# E2 run configuration. Reproducible: fixed prompt + request count + concurrency. The gate is the
+# real L2/L3 admission service (mqi.serve) fed the compiled ir.json; vLLM is the real GPU backend.
+model: Qwen/Qwen2.5-0.5B-Instruct
+prompt: "In one sentence, summarize why admission control is orthogonal to serving throughput."
+max_tokens: 16
+warmup: 24                          # untimed requests to warm vLLM before measuring (fair compare)
+num_requests: 200                   # per condition, split across `rounds`
+rounds: 4                           # alternate baseline/gated order each round (no ordering bias)
+concurrency: 8
+workload_id: wl-0-city-monitoring   # the single workload in contract.yaml
+vllm_url: http://127.0.0.1:18000
+gate_url: http://127.0.0.1:8080
+min_ratio: 0.95                      # gated throughput must be >= 95% of baseline (orthogonality)
+min_admit_rate: 0.99                 # the gate must ADMIT >=99% of offered load — a shedding gate (which
+                                     # lowers admit rate) cannot fake orthogonality; catches even ~2% shed
+min_success_rate: 0.97               # the admitted load must COMPLETE >=97% — slack tolerates a rare
+                                     # transient vLLM error so an orthogonal run does not flap to REJECTED
+output_dir: experiments/e2/out

@@ -1,0 +1,25 @@
+# kind cluster for the Stage-9 E2E: 1 control-plane + 2 workers, DRA enabled.
+# kind v0.32 defaults to kindest/node:v1.36.1 and emits kubeadm v1beta4 for k8s >= 1.36.
+# The two workers are labelled (device-class=gpu-40g / gpu-24g) after creation so the rendered
+# Kueue ResourceFlavors bind to them; the dra-example-driver then publishes simulated GPUs there.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+featureGates:
+  DynamicResourceAllocation: true
+runtimeConfig:
+  "resource.k8s.io/v1": "true"
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: ClusterConfiguration
+        apiServer:
+          extraArgs:
+            - name: runtime-config
+              value: "resource.k8s.io/v1=true"
+  - role: worker
+    labels:
+      device-class: gpu-40g
+  - role: worker
+    labels:
+      device-class: gpu-24g

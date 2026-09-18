@@ -1,0 +1,22 @@
+apiVersion: missionqos.dev/v0
+kind: DeferredRedGateConfig
+metadata:
+  name: urban-edge-2026
+  tenant: ops-admin
+spec:
+  gates:
+  - workload: wl-0-emergency-routing
+    slackBasisMs: 500
+    minServiceTimeSource: metrics
+    dropWhen: remaining_slack_ms < est_min_service_ms
+    onDrop: reject-with-reason
+  - workload: wl-1-city-monitoring
+    slackBasisMs: 5000
+    minServiceTimeSource: metrics
+    dropWhen: remaining_slack_ms < est_min_service_ms
+    onDrop: degrade
+  - workload: wl-2-historical-analysis
+    slackBasisMs: 60000
+    minServiceTimeSource: metrics
+    dropWhen: remaining_slack_ms < est_min_service_ms
+    onDrop: shed

@@ -1,0 +1,69 @@
+# Deploys the containerized L2/L3 admission service into the tenant namespace. The compiled ir.json
+# is mounted from the `mqi-ir` ConfigMap (created by the harness from `mqi compile` output) at
+# MQI_IR_PATH, so the running pod admits for exactly the same IR the cluster's L4/L5 were rendered
+# from — the cross-layer same-source guarantee, live.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqi-admission
+  namespace: ops-admin
+  labels:
+    app: mqi-admission
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mqi-admission
+  template:
+    metadata:
+      labels:
+        app: mqi-admission
+    spec:
+      containers:
+        - name: admission
+          image: localhost/mqi-admission:e2e
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MQI_IR_PATH
+              value: /etc/mqi/ir.json
+            - name: MQI_LISTEN
+              value: 0.0.0.0:8080
+            - name: MQI_MAX_QUEUE
+              value: "16"
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 1
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          volumeMounts:
+            - name: ir
+              mountPath: /etc/mqi
+              readOnly: true
+      volumes:
+        - name: ir
+          configMap:
+            name: mqi-ir
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mqi-admission
+  namespace: ops-admin
+  labels:
+    app: mqi-admission
+spec:
+  selector:
+    app: mqi-admission
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

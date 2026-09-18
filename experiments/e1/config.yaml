@@ -1,0 +1,5 @@
+# E1 (consistency + policy-guard) run configuration. Reproducible: the seed pins the corpus, and
+# the guard/verifier are versioned with the repo. Change `seed`/`n_valid` for a different draw.
+seed: 1337
+n_valid: 40
+output_dir: experiments/e1/out

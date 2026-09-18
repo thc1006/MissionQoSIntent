@@ -1,0 +1,84 @@
+# Real vLLM on the GPU for E2/E3 (isolated mqi-exp namespace). Requests one full GPU via the NVIDIA
+# DRA driver (DeviceClass gpu.nvidia.com), caps GPU memory to be considerate on a shared box, and
+# serves a small HF model (fits 16GB easily). Apply on the cluster host: kubectl apply -f this.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mqi-exp
+---
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: single-gpu
+  namespace: mqi-exp
+spec:
+  spec:
+    devices:
+      requests:
+        - name: gpu
+          exactly:
+            allocationMode: ExactCount
+            count: 1
+            deviceClassName: gpu.nvidia.com
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm
+  namespace: mqi-exp
+  labels:
+    app: vllm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # only one GPU: kill the old pod before starting the new (no rolling surge)
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      # K8s injects <SVCNAME>_PORT env vars; the `vllm` Service would set VLLM_PORT=tcp://... which
+      # collides with vLLM's own VLLM_PORT config and breaks engine startup. Disable service links.
+      enableServiceLinks: false
+      resourceClaims:
+        - name: gpu
+          resourceClaimTemplateName: single-gpu
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:latest
+          args:
+            - "--model"
+            - "Qwen/Qwen2.5-0.5B-Instruct"
+            - "--max-model-len"
+            - "4096"
+            - "--gpu-memory-utilization"
+            - "0.4"
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            claims:
+              - name: gpu
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 90
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm
+  namespace: mqi-exp
+spec:
+  selector:
+    app: vllm
+  ports:
+    - port: 8000
+      targetPort: http
+      name: http

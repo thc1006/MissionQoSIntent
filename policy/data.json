@@ -1,0 +1,26 @@
+{
+  "missionqos": {
+    "system": {
+      "min_service_time_ms": 50,
+      "capacity_rps": 1000,
+      "device_classes": {
+        "gpu-40g": {"min_deadline_ms": 100},
+        "gpu-24g": {"min_deadline_ms": 500}
+      }
+    },
+    "tenants": {
+      "city-ops": {
+        "admin": false,
+        "max_criticality": "incident-verification",
+        "throughput_entitlement_rps": 500,
+        "entitled_device_classes": ["gpu-40g", "gpu-24g"]
+      },
+      "ops-admin": {
+        "admin": true,
+        "max_criticality": "emergency-routing",
+        "throughput_entitlement_rps": 1000,
+        "entitled_device_classes": ["gpu-40g", "gpu-24g"]
+      }
+    }
+  }
+}

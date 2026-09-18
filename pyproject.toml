@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mqi"
+version = "0.1.0"
+description = "MissionQoSIntent: compiler from declarative multi-tenant QoS contracts to a policy-guarded typed IR and a verifiable cross-layer admission/scheduling control plane for GenAI inference on Kubernetes."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Hsiu-Chi Tsai" }]
+dependencies = ["pydantic>=2", "pyyaml>=6"]
+
+[project.scripts]
+mqi = "mqi.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.6",
+  "mypy>=1.11",
+  "types-PyYAML>=6",
+  "matplotlib>=3.9",  # experiment plots only (experiments/); not a runtime dep of the mqi package
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mqi"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+mypy_path = "src"
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.coverage.run]
+source = ["mqi"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true

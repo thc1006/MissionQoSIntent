@@ -1,0 +1,37 @@
+---
+apiVersion: inference.networking.k8s.io/v1
+kind: InferencePool
+metadata:
+  name: urban-edge-2026-pool
+spec:
+  selector:
+    matchLabels:
+      app: urban-edge-2026-inference
+  targetPorts:
+  - number: 8000
+  endpointPickerRef:
+    name: urban-edge-2026-epp
+    port:
+      number: 9002
+---
+apiVersion: inference.networking.x-k8s.io/v1alpha1
+kind: EndpointPickerConfig
+featureGates:
+- flowControl
+flowControl:
+  defaultRequestTTL: 60000ms
+  priorityBands:
+  - priority: 100
+    orderingPolicyRef: slo-deadline-ordering-policy
+    fairnessPolicyRef: global-strict-fairness-policy
+  - priority: 50
+    orderingPolicyRef: slo-deadline-ordering-policy
+    fairnessPolicyRef: global-strict-fairness-policy
+  - priority: 10
+    orderingPolicyRef: slo-deadline-ordering-policy
+    fairnessPolicyRef: global-strict-fairness-policy
+saturationDetector:
+  type: utilization-detector
+  queueDepthThreshold: 5
+  kvCacheUtilThreshold: 0.8
+  headroom: 0.0

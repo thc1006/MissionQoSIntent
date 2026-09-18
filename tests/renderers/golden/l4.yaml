@@ -1,0 +1,122 @@
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  name: gpu-24g
+spec:
+  nodeLabels:
+    device-class: gpu-24g
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  name: gpu-40g
+spec:
+  nodeLabels:
+    device-class: gpu-40g
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: Cohort
+metadata:
+  name: ops-admin-cohort
+spec: {}
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ClusterQueue
+metadata:
+  name: ops-admin-cq
+spec:
+  cohortName: ops-admin-cohort
+  namespaceSelector: {}
+  preemption:
+    withinClusterQueue: LowerPriority
+    reclaimWithinCohort: Any
+  resourceGroups:
+  - coveredResources:
+    - gpu-24g
+    flavors:
+    - name: gpu-24g
+      resources:
+      - name: gpu-24g
+        nominalQuota: 2
+  - coveredResources:
+    - gpu-40g
+    flavors:
+    - name: gpu-40g
+      resources:
+      - name: gpu-40g
+        nominalQuota: 1
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: LocalQueue
+metadata:
+  name: ops-admin-lq
+  namespace: ops-admin
+spec:
+  clusterQueue: ops-admin-cq
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: WorkloadPriorityClass
+metadata:
+  name: mqi-priority-100
+value: 100
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: WorkloadPriorityClass
+metadata:
+  name: mqi-priority-50
+value: 50
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: WorkloadPriorityClass
+metadata:
+  name: mqi-priority-10
+value: 10
+---
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: gpu-24g
+spec:
+  selectors:
+  - cel:
+      expression: device.attributes["deviceClass"] == "gpu-24g"
+---
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: gpu-40g
+spec:
+  selectors:
+  - cel:
+      expression: device.attributes["deviceClass"] == "gpu-40g"
+---
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: gpu-24g-claim
+  namespace: ops-admin
+spec:
+  spec:
+    devices:
+      requests:
+      - name: gpu
+        exactly:
+          deviceClassName: gpu-24g
+          allocationMode: ExactCount
+          count: 1
+---
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: gpu-40g-claim
+  namespace: ops-admin
+spec:
+  spec:
+    devices:
+      requests:
+      - name: gpu
+        exactly:
+          deviceClassName: gpu-40g
+          allocationMode: ExactCount
+          count: 1
